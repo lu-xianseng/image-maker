@@ -1,0 +1,13 @@
+
+[Desktop Entry]
+Icon=/usr/share/image_maker/resources/iso.svg
+#Exec=qdbus com.deepin.defender.hmiscreen /com/deepin/defender/hmiscreen com.deepin.defender.hmiscreen.showScanByPath %U
+Exec=pkexec udisk_iso_maker --maker %U
+Name=写入到U盘
+#Type=Application
+NoDisplay=false
+Terminal=false
+#X-DFM-MenuTypes=SingleDir;SingleFile
+#X-Deepin-TurboType=dtkwidget
+#X-Deepin-Vendor=user-custom
+X-DFM-MenuTypes=SingleFile;

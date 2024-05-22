@@ -1,0 +1,118 @@
+#!/bin/bash
+
+declare -A CONFIG
+declare -A MODE=(['0']='每次询问' ['1']='普通刻录' ['2']='dd刻录')
+declare -A CLEAN=(['0']='是' ['1']='否')
+
+
+function setup_ui(){
+
+     setup_info=$(yad --form \
+        --window-icon=$ICON \
+        --title="image-maker 配置" --center \
+        --width="400" --height="200" \
+        --button="取消:1" \
+        --button="更新配置:0" \
+        --field=":LBL" "" \
+        --field="刻录模式：:CB" "${MAKER_MODE_FIELD}" \
+        --field="日志路径：" "${CONFIG["path"]}" \
+        --field="写入时清除系统缓存：:CB" "${CLEAN_CACHE_FIELD}" \
+        --field="数据块大小(MB)：" "${CONFIG["block"]}" \
+        --field=":LBL")
+    if ! [ $? -eq 0 ]; then
+        # exit $?
+        return $?
+    fi
+    MAKER_MODE_DATA="$(echo "${setup_info}" | cut -d '|' -f 2)"
+    LOGPATH_DATA="$(echo "${setup_info}" | cut -d '|' -f 3)"
+    CLEAN_CACHE_DATA="$(echo "${setup_info}" | cut -d '|' -f 4)"
+    BLOCK_DATA="$(echo "${setup_info}" | cut -d '|' -f 5)"
+
+    update_to_file
+}
+
+function yad_box(){
+    yad --warning \
+        --window-icon="${ICON}" \
+        --width="400" --height="100" \
+        --title "注意" \
+        --center \
+        --text="\n${1}"  \
+        --button "确认:0"
+}
+
+function update_to_file(){
+
+    case ${MAKER_MODE_DATA} in 
+        "每次询问")
+            MAKER_MODE_DATA=0
+            ;;
+        "普通刻录")
+            MAKER_MODE_DATA=1
+            ;;
+        "dd刻录")
+            MAKER_MODE_DATA=2
+            ;;
+    esac
+    case ${CLEAN_CACHE_DATA} in 
+        "是")
+            CLEAN_CACHE_DATA=0
+            ;;
+        "否")
+            CLEAN_CACHE_DATA=1
+            ;;
+    esac
+    if [[ $LOGPATH_DATA == '' ]]; then
+      LOGPATH_DATA="/var/log"
+      yad_box "日志路径为空，自动配置为: ${LOGPATH_DATA}"
+
+    elif [[ $LOGPATH_DATA == */ ]]; then
+      LOGPATH_DATA="${LOGPATH_DATA::-1}"
+    fi
+
+    if ! [[ $BLOCK_DATA =~ ^[0-9]+$ ]] || [[ $LOGPATH_DATA == '' ]]; then
+        BLOCK_DATA="4"
+        yad_box "数据块大小设置错误，自动配置为: ${BLOCK_DATA}MB"
+    fi
+
+    {
+        echo "MAKER_MODE=${MAKER_MODE_DATA}"
+        echo "LOGPATH=${LOGPATH_DATA}"
+        echo "CLEAN_CACHE=${CLEAN_CACHE_DATA}"
+        echo "BLOCK_SIZE=${BLOCK_DATA}"
+    }>${CONFIG_FILE}
+   
+}
+
+function get_config_from_file(){
+    source "$CONFIG_FILE"
+    CONFIG["mode"]="${MAKER_MODE}"
+    CONFIG["path"]="${LOGPATH}"
+    CONFIG["clean"]="${CLEAN_CACHE}"
+    CONFIG["block"]="${BLOCK_SIZE}"
+    case ${CONFIG["mode"]} in 
+        1)
+            MAKER_MODE_FIELD="${MODE['1']}!${MODE['0']}!${MODE['2']}"
+            ;;
+        2)
+            MAKER_MODE_FIELD="${MODE['2']}!${MODE['0']}!${MODE['1']}"
+            ;;
+        *)
+            MAKER_MODE_FIELD="${MODE['0']}!${MODE['1']}!${MODE['2']}"
+            ;;
+    esac
+    case ${CONFIG["clean"]} in
+        1)
+            CLEAN_CACHE_FIELD="${CLEAN['1']}!${CLEAN['0']}"
+            ;;
+        *)
+            CLEAN_CACHE_FIELD="${CLEAN['0']}!${CLEAN['1']}"
+            ;;
+    esac
+}
+
+function update_config_main(){
+    get_config_from_file
+    setup_ui
+    
+}

@@ -1,0 +1,62 @@
+#!/bin/bash
+
+text="
+说明：
+    1、选中iso文件后，鼠标右键菜单，增加刻录菜单
+    2、可通过【配置】进行个性化配置
+    3、可通过【修复分区】进行U盘分区修复
+
+
+作者：luye@uniontech.com
+版本：1.0.6
+"
+
+function fix_partition(){
+    {
+        get_usb_disk 
+        echo "10"
+        umount_usb_point
+        echo "30"
+        create_partition
+        echo "70"
+        format_usb_disk "${USB_PATH}1"
+        echo "90"
+        clean
+        echo "100"
+        log info "fix partition completed"
+        show_msg "分区修复完成"
+    } |yad --progress --window-icon="${ICON}" \
+        --title="分区修复" --center --width=450 --height=100 \
+        --button="关闭:1"
+}
+
+function setup_and_about(){
+    while true; do
+        yad --window-icon="${ICON}" \
+                --width="450" --height="100" \
+                --title "关于和配置" \
+                --center \
+                --text="${text}"  \
+                --button "配置:0" \
+                --button="分区修复:1"
+        case $? in
+            0)
+                push_msg "Update config"
+                update_config_main
+                source "${PROJECT_PATH}/src/config"
+                continue
+                ;;
+            1)  
+                push_msg "Fix partition"
+                fix_partition
+                ;;
+            *)
+                exit
+                ;;
+        esac
+    done
+
+}
+
+
+

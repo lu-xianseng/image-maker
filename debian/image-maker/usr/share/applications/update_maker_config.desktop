@@ -1,0 +1,12 @@
+[Desktop Entry]
+Categories=Utility;System;
+Comment=A tool to create boot media
+Exec=pkexec udisk_iso_maker --about
+GenericName=关于image maker
+Icon=/usr/share/image_maker/resources/iso.svg
+Name=关于和配置
+StartupNotify=true
+Terminal=false
+Type=Application
+Version=1.0
+X-Deepin-Vendor=user-custom

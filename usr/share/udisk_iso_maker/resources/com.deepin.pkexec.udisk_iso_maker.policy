@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>udisk_iso_maker</vendor>
+  <vendor_url> </vendor_url>
+  <action id="com.deepin.pkexec.udisk_iso_maker">
+    <icon_name>stock_person</icon_name>
+    <message>Administrator password is required to write data</message>
+    <defaults>
+      <allow_any>yes</allow_any>
+      <allow_inactive>yes</allow_inactive>
+	  <allow_active>yes</allow_active>
+      <!-- 这个defaults节点下的所有子节点可以有这些值no,yes,auth_self,auth_admin,auth_self_keep,auth_admin_keep　-->
+    </defaults>
+    <message xml:lang="zh_CN">写入数据到U盘需要管理员密码</message>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/udisk_iso_maker</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+</policyconfig>

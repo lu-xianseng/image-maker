@@ -1,0 +1,13 @@
+Source: image-maker
+Section: unknown
+Priority: optional
+Maintainer: luxianseng <1173381395@qq.com>
+Build-Depends: debhelper (>=11~)
+Standards-Version: 4.1.4
+Homepage: <insert the upstream URL, if relevant>
+
+Package: image-maker
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, ${shlibs:Depends}, yad, progress
+Description: Right-click the menu to write data to USB disk

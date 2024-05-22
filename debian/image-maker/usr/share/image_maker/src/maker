@@ -1,0 +1,244 @@
+#!/bin/bash
+
+function log(){
+    local state="${1}"
+    local content="${2}"
+    echo "$(date +'%Y-%m-%d %H:%M:%S') [${state}] ${content}" >>"${LOGPATH}/image-maker.log"
+}
+
+function show_msg(){
+    if [ "${1}" = "m_line" ]; then
+        echo "# ${2}"
+    else
+        echo "#\n${1}"
+    fi
+}
+
+function check_usb(){
+    if ! lsblk -o TRAN|grep -q usb; then
+        return 1
+    fi
+    return 0
+}
+
+function get_usb_info(){
+
+    local usb_disk="${1}"
+    local u_size=$(lsblk "${usb_disk}" -o SIZE | sed -n '2p')
+    local u_name=$(fdisk -l "${usb_disk}" |awk '{print $3,$4,$5,$6}'|sed -n '2p')
+    local u_info="${u_name} ${u_size}"
+    log info "usb disk: ${u_info}"
+    show_msg "U盘信息：${u_info}"
+    MOUNTPOINT=$(lsblk "${usb_disk}" -o MOUNTPOINT | awk 'NR>1 {if(length !=0) print $0}' | sed -n '1p')
+}
+
+function get_usb_disk(){
+    show_msg "检查U盘设备……"
+    local flag=0
+    while true; do
+        if [ ${flag} -eq 5 ]; then
+            show_msg "未检测到U盘设备！继续等待或退出"
+        elif [ ${flag} -eq 120 ]; then
+            show_msg "尝试更换U盘或退出？"
+        fi
+        if ! check_usb; then
+            sleep 1
+            ((flag += 1))
+            continue
+        fi
+        break
+    done
+
+    n=0
+    for disk in $(lsblk -o PATH,TRAN | grep usb | awk '{print $1}'); do
+        all_usb_path["${n}"]="${disk}"
+        ((n++))
+    done
+
+    USB_PATH="${all_usb_path[0]}"
+    get_usb_info "${USB_PATH}"
+}
+
+function umount_usb_point(){
+    local mount_point_num=$(mount | grep -c "${USB_PATH}")
+    if ! [ "${mount_point_num}" -eq 0 ]; then
+        for ((i=1; i<mount_point_num+1; i++)); do
+            local point="$(lsblk "${USB_PATH}" -o MOUNTPOINT | awk 'NR>1 {if(length !=0) print $0}' | sed -n '1p')"
+            show_msg "卸载 ${point}"
+            umount "${point}"
+            if [ $? -eq 0 ]; then
+                log info "umount ${point} success"
+            else
+                log waning "umount ${point} fail"
+            fi
+            sleep 1
+        done
+    fi
+}
+
+function mount_partion(){
+    local mount_path="${1}"
+    local u_path="${2}"
+    mkdir -p "${mount_path}"
+    show_msg "挂载 ${mount_path}"
+    mount "${u_path}" "${mount_path}"
+    if [ $? -eq 0 ]; then
+        log info "mount ${mount_path} success"
+    else
+        log warning "mount ${mount_path} fail"
+        exit 
+    fi
+}
+
+function format_usb_disk(){
+    local device="${1}"
+    show_msg "格式化 ${device}"
+    mkfs.vfat -I "${device}" >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        log info "format ${device} success"
+    else
+        log warning "format ${device} fail"
+    fi
+}
+
+function clean(){
+    umount_usb_point
+    rm -rf "${MOUNT_PATH}"
+}
+
+function create_partition(){
+    flag="$(echo "${USB_PATH}" | cut -d '/' -f 3)"
+    show_msg "重置分区"
+    echo -e 'd\n\n\nd\n\n\nd\n\n\nd\n\nd\n\n\nw\n' | fdisk "${USB_PATH}"
+    sleep 1
+    format_usb_disk "${USB_PATH}"
+    echo -e 'o\n\nw\n' | fdisk "${USB_PATH}"
+    sleep 1
+    if lsblk | grep -q "${flag}1"; then
+        show_msg "重置分区失败！"
+        exit
+    fi
+    echo "创建新分区"
+    echo -e 'n\n\n\n\n\n\nw\n' | fdisk "${USB_PATH}"
+    sleep 1
+    if ! lsblk | grep -q "${flag}1"; then
+        show_msg "分区创建失败！"
+        exit
+    fi
+}
+
+function maker(){
+    mode="${1}"
+    if [ ${CLEAN_CACHE} -eq 0 ]; then
+        log info "clean system cache"
+        show_msg "清除系统缓存……"
+        echo 1 >/proc/sys/vm/drop_caches
+    fi
+    show_msg "开始刻录……"
+    case "${mode}" in
+        1 )
+            push_msg "Use normal write"
+            create_partition
+            format_usb_disk "${USB_PATH}1"
+            log info "maker mode: normal"
+            mount_partion "${MOUNT_PATH}" "${USB_PATH}1"
+            log info "start write data"
+            7z x -y "${FILEPATH}" -o"${MOUNT_PATH}" -bsp2 &
+            pid="$(ps -eo pid,stat,command | grep -oP "\d+(?=\sD.*${FILEPATH})")"
+            progress -p "$pid"
+            while true; do
+                if ! ps -p $pid >/dev/null; then
+                    break
+                fi
+                local progress_num=$(progress | grep -oP '\d+\.*\d*(?=%)')
+                show_msg "${progress_num} %"
+                echo "${progress_num}"
+                sleep 0.2
+            done
+            ;;
+        2 )
+            push_msg "Use dd write"
+            log info "maker mode: dd"
+            log info "start write data"
+            dd if="${FILEPATH}" of="${USB_PATH}" bs="${BLOCK_SIZE}M" status=progress &
+            pid="$(ps -eo pid,stat,command | grep -oP "\d+(?=\sD.*${FILEPATH})")"
+            variable=0
+            while true; do
+                if ! ps -p $pid >/dev/null; then
+                    break
+                fi
+                increment=$(awk -v min=0.1 -v max=2 'BEGIN{srand(); printf "%.1f", min+rand()*(max-min)}')
+                variable=$(echo "$variable + $increment" | bc)
+                show_msg "${variable} %"
+                echo "${variable}"
+                if (( $(echo "$variable >= 99" | bc -l) )); then
+                break
+                fi
+                sleep 1
+            done
+            ;;
+    esac
+    log info "sync data"
+    echo "99"
+    show_msg 'm_line' "请等待数据同步……\n\t99 %"
+    wait
+    sync
+}
+
+function maker_main(){
+    if ! isoinfo -d -i "${FILEPATH}" |grep -q 'CD-ROM is in ISO 9660 format'; then
+        yad --warning \
+            --title "注意" \
+            --center --window-icon="${ICON}" --width=450 --height=100 \
+            --text="\n写入镜像文件错误，请确认文件为正确的iso镜像文件" \
+            --button "退出:0"
+        exit 1
+    fi
+    while true; do
+        if [ $MAKER_MODE -eq 0 ]; then
+            yad --center --window-icon="${ICON}" --width=400 --height=100 \
+            --title "刻录模式选择" --text-align="center" \
+            --button=普通刻录:1 --button=dd刻录:2\
+            --text "\n请选择制作模式！"
+            case $? in
+                0)
+                    update_config_main
+                    source "${PROJECT_PATH}/src/config"
+                    continue
+                    ;;
+                1)
+                    MAKER_MODE=1
+                    ;;
+                2)
+                    MAKER_MODE=2
+                    ;;
+                *)
+                    exit 1
+                    ;;
+            esac
+        fi
+        break
+    done
+
+    
+    file_name="$(basename "${FILEPATH}")"
+    log info "file: ${FILEPATH}"
+    if [ ${#file_name} -gt 70 ]; then
+        file_name="${file_name:0:25}...${file_name: -35}"
+    fi
+    starttime="$(date +'%s')"
+    {
+        
+        show_msg "文件：${file_name}"
+        get_usb_disk 
+        umount_usb_point
+
+        maker "${MAKER_MODE}"
+        clean
+        all_time=$(($(date +'%s') - starttime))
+        log info "completed, which takes time: ${all_time} second"
+        show_msg 'm_line' "${file_name}\n刻录完成，用时：${all_time} 秒"
+    } |yad --progress --window-icon="${ICON}" \
+        --title="刻录镜像" --center --width=450 --height=100 \
+        --button="关闭:1"
+}

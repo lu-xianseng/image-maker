@@ -1,0 +1,13 @@
+ce7eebb2bdd2d544127eb581beff0e14  usr/bin/udisk_iso_maker
+70aae0e3fb25601aee9e44657e00a5d4  usr/share/applications/update_maker_config.desktop
+86c7630bd17ee0dd4415bbe7e9ea156b  usr/share/deepin/dde-file-manager/oem-menuextensions/udisk_iso_maker.desktop
+faec5d097764b3bf7cf8219011a2e5b4  usr/share/doc/image-maker/README.Debian
+39c29a676e97596a834f628c5807ae4f  usr/share/doc/image-maker/changelog.gz
+128fea026c51bbc9973b4420056af4e5  usr/share/doc/image-maker/copyright
+ea208bf80b7041cb51cbaf009cc86a56  usr/share/image_maker/resources/iso.svg
+d27591cc53f0cf7cb3c404b9034a7602  usr/share/image_maker/src/config
+bb34f2791c849fd17e4e504041d97788  usr/share/image_maker/src/maker
+ccbf351ef5242d68f66f21a5e67e6e0d  usr/share/image_maker/src/report
+9ac45e773d6b94e58d35dad899de5ea2  usr/share/image_maker/src/setup_about
+a1ef37787af1c56cc6b0cca9aba5493f  usr/share/image_maker/src/update_config
+d438c4d89b33a617be8a6a9ec3c4130a  usr/share/polkit-1/actions/com.deepin.pkexec.udisk_iso_maker.policy

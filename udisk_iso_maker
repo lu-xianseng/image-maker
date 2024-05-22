@@ -1,0 +1,83 @@
+#!/bin/bash
+
+export PROJECT_PATH="/usr/share/image_maker"
+export CONFIG_FILE="${PROJECT_PATH}/src/config"
+export ICON="${PROJECT_PATH}/resources/iso.svg"
+
+export USERNAME=$(id -un 1000)
+export FLAG_RANDOM="$(mktemp -u |cut -d . -f 2)-${USERNAME}"
+
+source "${PROJECT_PATH}/src/config"
+source "${PROJECT_PATH}/src/maker"
+source "${PROJECT_PATH}/src/report"
+source "${PROJECT_PATH}/src/setup_about"
+source "${PROJECT_PATH}/src/update_config"
+
+function on_window_close(){
+    log warning "Window closed."
+    for p in $(ps -aux |grep -E "$0|'dd if'|'7z x'"|grep -v grep |awk '{print $2}'); do
+        if ps -p $p; then
+            kill -9 "$p" 
+        fi
+    done
+    workpath="/tmp/kl"
+    if [ -d "${workpath}" ]; then
+        for p in $(ls "${workpath}"); do
+            umount $(mount |grep "$p"|awk '{print $1}')
+        done
+        rm -rf "${workpath}"
+    fi
+    exit 0
+}
+
+
+function init_env(){
+    if [ "$(id -u)" -ne 0 ]; then
+        echo "Must use root permission"
+        exit 2
+    fi
+
+    workpath="/tmp/kl"
+    rm -rf "${workpath}"
+    random_id="$(mktemp -u |cut -d . -f 2)"
+    
+    if [ -z $random_id ]; then
+        exit 1
+    fi
+    export MOUNT_PATH="${workpath}/${random_id}"
+}
+
+
+function main(){
+    export DISPLAY=:0
+    su -c 'xhost +' "${USERNAME}" 
+    push_msg "Boot"
+	while ! [ "${#}" -eq 0 ]; do
+		option="${1}"
+		case "${option}" in
+            --about)
+                setup_and_about
+                exit
+                ;;
+            --maker)
+                shift 1
+                trap on_window_close EXIT
+                init_env
+                export FILEPATH="${*}"
+                maker_main
+                ;;
+            *)
+                echo "错误参数！"
+                exit 1
+                ;;
+        esac
+    done
+}
+
+if dpkg -l |grep dde-dconfig-daemon -q; then
+    dde-dconfig --set -a org.deepin.deepin-log-viewer \
+        -r org.deepin.deepin-log-viewer -k customLogFiles \
+        -v "[\"${LOGPATH}/image-maker.log\"]" 
+fi
+
+main ${*}

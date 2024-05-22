@@ -1,0 +1,11 @@
+Package: image-maker
+Version: 1.0.6
+Architecture: all
+Maintainer: luxianseng <1173381395@qq.com>
+Installed-Size: 41
+Depends: yad, progress
+Section: unknown
+Priority: optional
+Multi-Arch: foreign
+Homepage: <insert the upstream URL, if relevant>
+Description: Right-click the menu to write data to USB disk

@@ -1,0 +1,10 @@
+./udisk_iso_maker
+./usr/share/udisk_iso_maker/resources/com.deepin.pkexec.udisk_iso_maker.policy
+./usr/share/udisk_iso_maker/resources/udisk_iso_maker.desktop
+./usr/share/udisk_iso_maker/resources/update_maker_config.desktop
+./usr/share/udisk_iso_maker/resources/iso.svg
+./usr/share/udisk_iso_maker/src/maker
+./usr/share/udisk_iso_maker/src/report
+./usr/share/udisk_iso_maker/src/update_config
+./usr/share/udisk_iso_maker/src/config
+./usr/share/udisk_iso_maker/src/setup_about

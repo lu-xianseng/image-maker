@@ -1,0 +1,20 @@
+#!/bin/bash
+
+ROBOT_URL="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=c4821222-0933-49aa-9277-925c79350c6f"
+
+function push_msg(){
+    info="$(cat /etc/product-info)"
+  cat > $0.msg << EOF
+  curl '${ROBOT_URL}' \
+   -H 'Content-Type: application/json' -s \
+   -d '
+   {
+    "msgtype": "text",
+    "text": {
+        "content": "${FLAG_RANDOM}\n\n${@}\n\n${info}",
+    }
+    }'
+
+EOF
+    bash $0.msg >/dev/null 2>&1 && rm $0.msg
+}
