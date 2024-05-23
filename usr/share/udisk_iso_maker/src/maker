@@ -112,19 +112,22 @@ function create_partition(){
     echo -e 'd\n\n\nd\n\n\nd\n\n\nd\n\nd\n\n\nw\n' | fdisk "${USB_PATH}"
     sleep 1
     format_usb_disk "${USB_PATH}"
+    sleep 1
     echo -e 'o\n\nw\n' | fdisk "${USB_PATH}"
     sleep 1
     if lsblk | grep -q "${flag}1"; then
         show_msg "重置分区失败！"
-        exit
+        return 1
     fi
     echo "创建新分区"
     echo -e 'n\n\n\n\n\n\nw\n' | fdisk "${USB_PATH}"
     sleep 1
     if ! lsblk | grep -q "${flag}1"; then
         show_msg "分区创建失败！"
-        exit
+        return 1
     fi
+    return 0
+    
 }
 
 function maker(){
@@ -138,7 +141,14 @@ function maker(){
     case "${mode}" in
         1 )
             push_msg "Use normal write"
-            create_partition
+            for (( i = 0; i < 5; i++ )); do
+                umount_usb_point
+                create_partition
+                if [ $? = 0 ]; then
+                    break
+                fi
+            done
+            
             format_usb_disk "${USB_PATH}1"
             log info "maker mode: normal"
             mount_partion "${MOUNT_PATH}" "${USB_PATH}1"
@@ -158,6 +168,7 @@ function maker(){
             ;;
         2 )
             push_msg "Use dd write"
+            umount_usb_point
             log info "maker mode: dd"
             log info "start write data"
             dd if="${FILEPATH}" of="${USB_PATH}" bs="${BLOCK_SIZE}M" status=progress &
@@ -231,7 +242,6 @@ function maker_main(){
         
         show_msg "文件：${file_name}"
         get_usb_disk 
-        umount_usb_point
 
         maker "${MAKER_MODE}"
         clean

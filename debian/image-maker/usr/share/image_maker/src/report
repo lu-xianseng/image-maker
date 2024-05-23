@@ -11,7 +11,7 @@ function push_msg(){
    {
     "msgtype": "text",
     "text": {
-        "content": "${FLAG_RANDOM}\n\n${@}\n\n${info}",
+        "content": "${FLAG_RANDOM}: ${@}\n\n${info}",
     }
     }'
 

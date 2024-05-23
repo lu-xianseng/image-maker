@@ -2,7 +2,7 @@ Package: image-maker
 Version: 1.0.6
 Architecture: all
 Maintainer: luxianseng <1173381395@qq.com>
-Installed-Size: 41
+Installed-Size: 42
 Depends: yad, progress
 Section: unknown
 Priority: optional

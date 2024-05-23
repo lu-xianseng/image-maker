@@ -6,8 +6,8 @@ faec5d097764b3bf7cf8219011a2e5b4  usr/share/doc/image-maker/README.Debian
 128fea026c51bbc9973b4420056af4e5  usr/share/doc/image-maker/copyright
 ea208bf80b7041cb51cbaf009cc86a56  usr/share/image_maker/resources/iso.svg
 d27591cc53f0cf7cb3c404b9034a7602  usr/share/image_maker/src/config
-bb34f2791c849fd17e4e504041d97788  usr/share/image_maker/src/maker
-ccbf351ef5242d68f66f21a5e67e6e0d  usr/share/image_maker/src/report
-9ac45e773d6b94e58d35dad899de5ea2  usr/share/image_maker/src/setup_about
+4680eee7d2485c2370139f42e924cdcf  usr/share/image_maker/src/maker
+1adf22523189f547537c15d68745dfc0  usr/share/image_maker/src/report
+d8145c1e708a853d1bc958de35f046b3  usr/share/image_maker/src/setup_about
 a1ef37787af1c56cc6b0cca9aba5493f  usr/share/image_maker/src/update_config
 d438c4d89b33a617be8a6a9ec3c4130a  usr/share/polkit-1/actions/com.deepin.pkexec.udisk_iso_maker.policy

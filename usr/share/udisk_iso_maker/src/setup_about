@@ -15,9 +15,15 @@ function fix_partition(){
     {
         get_usb_disk 
         echo "10"
-        umount_usb_point
-        echo "30"
-        create_partition
+        for (( i = 0; i < 10; i++ )); do
+            umount_usb_point
+            echo "30"
+            create_partition
+            if [ $? = 0 ]; then
+                break
+            fi
+        done
+        
         echo "70"
         format_usb_disk "${USB_PATH}1"
         echo "90"
