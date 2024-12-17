@@ -106,6 +106,58 @@ function clean(){
     rm -rf "${MOUNT_PATH}"
 }
 
+function check_hash(){
+    local path=$1
+    cd "${path}"
+    log info "check hash"
+    if [ ! -e ./sha256sum.txt ]; then
+        return 0
+    fi
+    sha256sum -c sha256sum.txt >>"${LOGPATH}/image-maker.log" 2>&1
+    if [ $? -ne 0 ]; then
+        cd -
+        return 1
+    fi
+    cd -
+    return 0
+}
+
+function umount_loop(){
+    for i in $(lsblk |grep "${1}"|awk '{print $1}'); do
+        log debug $(umount "${1}")
+    done
+}
+
+function check_iso_hash(){
+    if [ $CHECK_ISO_HASH -eq 0 ]; then
+        show_msg "镜像文件校验……"
+        tmp_path="/tmp/image-maker"
+        umount_loop "${tmp_path}"
+        rm -rf "${tmp_path}"
+        mkdir -p "${tmp_path}"
+        mount -o loop "${FILEPATH}" "${tmp_path}"
+        if ! check_hash "${tmp_path}"; then
+            show_msg "镜像文件校验失败！请重新下载镜像文件"
+            umount_loop "${tmp_path}"
+            exit 1
+        fi
+        show_msg "镜像文件校验成功！"
+        umount_loop "${tmp_path}"
+    fi
+}
+
+function check_startup_disk_hash(){
+    echo "99"
+    show_msg "启动盘校验……\n\t99 %"
+    if [ $CHECK_HASH -eq 0 ]; then
+        if ! check_hash "${1}"; then
+                show_msg "启动盘校验失败！请重新制作！"
+                exit 1
+            fi
+            show_msg "启动盘校验成功！"
+    fi
+}
+
 function create_partition(){
     flag="$(echo "${USB_PATH}" | cut -d '/' -f 3)"
     show_msg "重置分区"
@@ -128,6 +180,14 @@ function create_partition(){
     fi
     return 0
     
+}
+
+function sync_data(){
+    log info "sync data"
+    echo "99"
+    show_msg 'm_line' "请等待数据同步……\n\t99 %"
+    wait
+    sync
 }
 
 function maker(){
@@ -165,13 +225,15 @@ function maker(){
                 echo "${progress_num}"
                 sleep 0.2
             done
+            sync_data
+            check_startup_disk_hash "${MOUNT_PATH}"
             ;;
         2 )
             push_msg "Use dd write"
             umount_usb_point
             log info "maker mode: dd"
             log info "start write data"
-            dd if="${FILEPATH}" of="${USB_PATH}" bs="${BLOCK_SIZE}M" status=progress &
+            dd if="${FILEPATH}" of="${USB_PATH}" bs="${BLOCK_SIZE}M" status=progress iflag=nonblock oflag=nonblock &
             pid="$(ps -eo pid,stat,command | grep -oP "\d+(?=\sD.*${FILEPATH})")"
             variable=0
             while true; do
@@ -187,13 +249,11 @@ function maker(){
                 fi
                 sleep 1
             done
+            sync_data
+            mount_partion "${MOUNT_PATH}" "${USB_PATH}"
             ;;
     esac
-    log info "sync data"
-    echo "99"
-    show_msg 'm_line' "请等待数据同步……\n\t99 %"
-    wait
-    sync
+    
 }
 
 function maker_main(){
@@ -242,7 +302,7 @@ function maker_main(){
         
         show_msg "文件：${file_name}"
         get_usb_disk 
-
+        check_iso_hash
         maker "${MAKER_MODE}"
         clean
         all_time=$(($(date +'%s') - starttime))

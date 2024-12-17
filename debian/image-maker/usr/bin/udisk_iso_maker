@@ -2,10 +2,10 @@
 
 export PROJECT_PATH="/usr/share/image_maker"
 export CONFIG_FILE="${PROJECT_PATH}/src/config"
-export ICON="${PROJECT_PATH}/resources/iso.svg"
+export ICON="${PROJECT_PATH}/resources/maker.svg"
 
 export USERNAME=$(id -un 1000)
-export FLAG_RANDOM="$(mktemp -u |cut -d . -f 2)-${USERNAME}"
+export FLAG_RANDOM="$(mktemp -u |cut -d . -f 2)${USERNAME}"
 
 source "${PROJECT_PATH}/src/config"
 source "${PROJECT_PATH}/src/maker"
@@ -51,7 +51,6 @@ function init_env(){
 function main(){
     export DISPLAY=:0
     su -c 'xhost +' "${USERNAME}" 
-    push_msg "Boot"
 	while ! [ "${#}" -eq 0 ]; do
 		option="${1}"
 		case "${option}" in

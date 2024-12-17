@@ -2,7 +2,7 @@
 
 declare -A CONFIG
 declare -A MODE=(['0']='每次询问' ['1']='普通刻录' ['2']='dd刻录')
-declare -A CLEAN=(['0']='是' ['1']='否')
+declare -A ITEM=(['0']='是' ['1']='否')
 
 
 function setup_ui(){
@@ -18,6 +18,8 @@ function setup_ui(){
         --field="日志路径：" "${CONFIG["path"]}" \
         --field="写入时清除系统缓存：:CB" "${CLEAN_CACHE_FIELD}" \
         --field="数据块大小(MB)：" "${CONFIG["block"]}" \
+        --field="ISO 文件校验：:CB" "${CHECK_ISO_HASH_FIELD}" \
+        --field="启动盘校验：:CB" "${CHECK_HASH_FIELD}" \
         --field=":LBL")
     if ! [ $? -eq 0 ]; then
         # exit $?
@@ -27,6 +29,8 @@ function setup_ui(){
     LOGPATH_DATA="$(echo "${setup_info}" | cut -d '|' -f 3)"
     CLEAN_CACHE_DATA="$(echo "${setup_info}" | cut -d '|' -f 4)"
     BLOCK_DATA="$(echo "${setup_info}" | cut -d '|' -f 5)"
+    CHECK_ISO_HASH_DATA="$(echo "${setup_info}" | cut -d '|' -f 6)"
+    CHECK_HASH_DATA="$(echo "${setup_info}" | cut -d '|' -f 7)"
 
     update_to_file
 }
@@ -62,6 +66,22 @@ function update_to_file(){
             CLEAN_CACHE_DATA=1
             ;;
     esac
+    case ${CHECK_ISO_HASH_DATA} in 
+        "是")
+            CHECK_ISO_HASH_DATA=0
+            ;;
+        "否")
+            CHECK_ISO_HASH_DATA=1
+            ;;
+    esac
+    case ${CHECK_HASH_DATA} in 
+        "是")
+            CHECK_HASH_DATA=0
+            ;;
+        "否")
+            CHECK_HASH_DATA=1
+            ;;
+    esac
     if [[ $LOGPATH_DATA == '' ]]; then
       LOGPATH_DATA="/var/log"
       yad_box "日志路径为空，自动配置为: ${LOGPATH_DATA}"
@@ -76,6 +96,8 @@ function update_to_file(){
     fi
 
     {
+        echo "CHECK_HASH=${CHECK_HASH_DATA}"
+        echo "CHECK_ISO_HASH=${CHECK_ISO_HASH_DATA}"
         echo "MAKER_MODE=${MAKER_MODE_DATA}"
         echo "LOGPATH=${LOGPATH_DATA}"
         echo "CLEAN_CACHE=${CLEAN_CACHE_DATA}"
@@ -86,6 +108,8 @@ function update_to_file(){
 
 function get_config_from_file(){
     source "$CONFIG_FILE"
+    CONFIG["check_hash"]="${CHECK_HASH}"
+    CONFIG["check_iso_hash"]="${CHECK_ISO_HASH}"
     CONFIG["mode"]="${MAKER_MODE}"
     CONFIG["path"]="${LOGPATH}"
     CONFIG["clean"]="${CLEAN_CACHE}"
@@ -101,13 +125,29 @@ function get_config_from_file(){
             MAKER_MODE_FIELD="${MODE['0']}!${MODE['1']}!${MODE['2']}"
             ;;
     esac
-    case ${CONFIG["clean"]} in
+    case ${CONFIG["check_hash"]} in
         1)
-            CLEAN_CACHE_FIELD="${CLEAN['1']}!${CLEAN['0']}"
+            CHECK_HASH_FIELD="${ITEM['1']}!${ITEM['0']}"
             ;;
         *)
-            CLEAN_CACHE_FIELD="${CLEAN['0']}!${CLEAN['1']}"
+            CHECK_HASH_FIELD="${ITEM['0']}!${ITEM['1']}"
             ;;
+    esac
+    case ${CONFIG["check_iso_hash"]} in
+        1)
+            CHECK_ISO_HASH_FIELD="${ITEM['1']}!${ITEM['0']}"
+            ;;
+        *)
+            CHECK_ISO_HASH_FIELD="${ITEM['0']}!${ITEM['1']}"
+            ;;
+    esac
+    case ${CONFIG["clean"]} in
+    1)
+        CLEAN_CACHE_FIELD="${ITEM['1']}!${ITEM['0']}"
+        ;;
+    *)
+        CLEAN_CACHE_FIELD="${ITEM['0']}!${ITEM['1']}"
+        ;;
     esac
 }
 

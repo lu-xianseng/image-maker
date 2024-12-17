@@ -1,6 +1,5 @@
-
 [Desktop Entry]
-Icon=/usr/share/image_maker/resources/iso.svg
+Icon=/usr/share/image_maker/resources/maker.ico
 #Exec=qdbus com.deepin.defender.hmiscreen /com/deepin/defender/hmiscreen com.deepin.defender.hmiscreen.showScanByPath %U
 Exec=pkexec udisk_iso_maker --maker %U
 Name=写入到U盘

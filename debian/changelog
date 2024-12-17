@@ -1,9 +1,10 @@
-image-maker (1.0.6) UNRELEASED; urgency=low
+image-maker (1.0.7) UNRELEASED; urgency=low
 
   * 1.0.3, 修复窗口消失问题，文件名识别问题，进度条归零问题
   * 1.0.4, 修改文件名包含空格制作失败的问题
   * 1.0.5, 去除设置, 修复华为不能启动问题
   * 1.0.6, 增加创建分区
+  * 1.0.7, 增加hash校验和对应配置
   * 
   * 
   * 
